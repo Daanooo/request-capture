@@ -9,13 +9,14 @@ import (
 )
 
 func main() {
-	// This channel is used to signal that the application should stop, either by the UI or the listener
-	closed := make(chan error)
-	l := server.NewListener(":55555", closed)
+	closed := make(chan error)            // Stop and error signaling channel
+	captures := make(chan server.Capture) // Channel for sending captures to the UI
+
+	l := server.NewListener(":55555", captures, closed)
 
 	// Start the application
 	go l.Start()
-	go ui.Draw(closed)
+	go ui.Draw(captures, closed)
 	go func() {
 		app.Main()
 		closed <- nil
