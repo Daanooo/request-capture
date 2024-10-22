@@ -4,27 +4,51 @@ import (
 	"fmt"
 
 	"gioui.org/app"
+	"gioui.org/op"
+	"gioui.org/unit"
 	"github.com/daanooo/request-capture/internal/server"
 )
 
-func Draw(captures chan server.Capture, closed chan error) {
+type UI struct {
+	stop     chan error
+	captures chan server.Capture
+}
+
+func NewUI(stop chan error, captures chan server.Capture) UI {
+	return UI{stop, captures}
+}
+
+func (ui UI) Start() error {
+	window := new(app.Window)
+	window.Option(app.Title("Request Capture"))
+	window.Option(app.Size(unit.Dp(1280), unit.Dp(720)))
+
+	if err := ui.loop(window); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (ui UI) loop(window *app.Window) error {
 	go func() {
 		for {
-			c := <-captures
+			c := <-ui.captures
 			fmt.Println(c)
 		}
 	}()
 
-	w := new(app.Window)
-	w.Option(app.Title("Request Capture"))
+	ops := new(op.Ops)
 
 	for {
-		switch e := w.Event().(type) {
+		switch e := window.Event().(type) {
 
 		case app.FrameEvent:
+			gtx := app.NewContext(ops, e)
 
+			e.Frame(gtx.Ops)
 		case app.DestroyEvent:
-			closed <- e.Err
+			ui.stop <- e.Err // Signal application to shut down through channel
 		}
 	}
 }

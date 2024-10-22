@@ -25,3 +25,11 @@ func NewCapture(r *http.Request) (Capture, error) {
 
 	return Capture{headers: headers, body: string(buf)}, nil
 }
+
+func (c Capture) Headers() map[string][]string {
+	return c.headers
+}
+
+func (c Capture) Body() string {
+	return c.body
+}
