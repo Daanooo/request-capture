@@ -10,16 +10,14 @@ type Listener struct {
 	host   string
 }
 
-func NewListener(host string) *Listener {
+func NewListener(host string, closed chan error) *Listener {
 	return &Listener{
-		closed: make(chan error),
+		closed: closed,
 		host:   host,
 	}
 }
 
 func (l *Listener) Start() {
-	defer close(l.closed)
-
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if err := HandleRequest(r); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -33,8 +31,6 @@ func (l *Listener) Start() {
 	if err := http.ListenAndServe(l.host, nil); err != nil {
 		l.closed <- err
 	}
-
-	l.closed <- nil
 }
 
 func (l *Listener) Closed() chan error {
