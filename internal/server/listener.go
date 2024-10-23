@@ -6,15 +6,13 @@ import (
 )
 
 type Listener struct {
+	quit     chan error
 	captures chan Capture
 	host     string
 }
 
-func NewListener(host string, captures chan Capture) *Listener {
-	return &Listener{
-		captures: captures,
-		host:     host,
-	}
+func NewListener(host string, quit chan error, captures chan Capture) *Listener {
+	return &Listener{quit, captures, host}
 }
 
 func (l *Listener) Start() {
@@ -31,7 +29,8 @@ func (l *Listener) Start() {
 	})
 
 	log.Printf("Server starting on %s\n", l.host)
+
 	if err := http.ListenAndServe(l.host, nil); err != nil {
-		log.Fatalf("Listener encountered an unexpected error: %s/n", err)
+		l.quit <- err
 	}
 }

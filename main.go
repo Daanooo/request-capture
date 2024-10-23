@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"gioui.org/app"
 	"github.com/daanooo/request-capture/internal/server"
@@ -9,21 +10,26 @@ import (
 )
 
 func main() {
+	quit := make(chan error)              // Signalling channel to stop the application
 	captures := make(chan server.Capture) // Channel for sending captures to the UI
 
-	l := server.NewListener(":55556", captures)
-	ui := ui.NewUI(captures)
+	l := server.NewListener(":55556", quit, captures)
+	ui := ui.NewUI(quit, captures)
 
-	// Start the application
-	go l.Start()
-
+	// Listen to the signalling channel and quit the application if the ui or listener requests it
 	go func() {
-		if err := ui.Start(); err != nil {
-			log.Fatalf("Application terminated unexpectedly with error: %s\n", err)
+		if err := <-quit; err != nil {
+			log.Fatalf("Application shut down unexpectedly with error: %s\n", err)
 		}
+
+		log.Println("Application shut down gracefully")
+		os.Exit(0)
 	}()
 
-	app.Main()
+	// Start the listener
+	go l.Start()
 
-	log.Fatalln("Application terminated normally")
+	// Start the main application
+	ui.Start()
+	app.Main()
 }
