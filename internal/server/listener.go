@@ -7,14 +7,12 @@ import (
 
 type Listener struct {
 	captures chan Capture
-	closed   chan error
 	host     string
 }
 
-func NewListener(host string, captures chan Capture, closed chan error) *Listener {
+func NewListener(host string, captures chan Capture) *Listener {
 	return &Listener{
 		captures: captures,
-		closed:   closed,
 		host:     host,
 	}
 }
@@ -34,6 +32,6 @@ func (l *Listener) Start() {
 
 	log.Printf("Server starting on %s\n", l.host)
 	if err := http.ListenAndServe(l.host, nil); err != nil {
-		l.closed <- err
+		log.Fatalf("Listener encountered an unexpected error: %s/n", err)
 	}
 }

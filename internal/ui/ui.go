@@ -10,12 +10,11 @@ import (
 )
 
 type UI struct {
-	stop     chan error
 	captures chan server.Capture
 }
 
-func NewUI(stop chan error, captures chan server.Capture) UI {
-	return UI{stop, captures}
+func NewUI(captures chan server.Capture) UI {
+	return UI{captures}
 }
 
 func (ui UI) Start() error {
@@ -48,7 +47,7 @@ func (ui UI) loop(window *app.Window) error {
 
 			e.Frame(gtx.Ops)
 		case app.DestroyEvent:
-			ui.stop <- e.Err // Signal application to shut down through channel
+			return e.Err
 		}
 	}
 }

@@ -9,30 +9,21 @@ import (
 )
 
 func main() {
-	stop := make(chan error)              // Stop and error signaling channel
 	captures := make(chan server.Capture) // Channel for sending captures to the UI
 
-	l := server.NewListener(":55555", captures, stop)
-	ui := ui.NewUI(stop, captures)
+	l := server.NewListener(":55556", captures)
+	ui := ui.NewUI(captures)
 
 	// Start the application
 	go l.Start()
 
 	go func() {
 		if err := ui.Start(); err != nil {
-			stop <- err
+			log.Fatalf("Application terminated unexpectedly with error: %s\n", err)
 		}
 	}()
 
-	go func() {
-		app.Main()
-		stop <- nil
-	}()
-
-	// Terminate the application when the UI or or listener signals or gives an error
-	if err := <-stop; err != nil {
-		log.Fatalf("Application terminated unexpectedly with error: %s\n", err)
-	}
+	app.Main()
 
 	log.Fatalln("Application terminated normally")
 }
